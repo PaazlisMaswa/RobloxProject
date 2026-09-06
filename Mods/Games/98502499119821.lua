@@ -23,6 +23,10 @@ Connections.CharacterAdded = LocalPlayer.CharacterAdded:Connect(function(newChar
 	Character = newCharacter
 end)
 
+local CodeDropdown = nil
+local FishingThread = nil
+local CodeCache, CodeTypes = {}, {}
+
 local function FireTouch(hitPart, targetPart)
 	if firetouchinterest and hitPart and targetPart then
 		firetouchinterest(hitPart, targetPart, 1)
@@ -62,13 +66,8 @@ local function IsCursorPerfect(cursor)
 end
 
 local function IsFillRunOut(fill)
-	if fill.Size.Scale.X <= 0 then
-		return true
-	end
-	return false
+	return fill.Size.Scale.X <= 0
 end
-
-local FishingThread = nil
 
 local function HandleFishing()
 	if Connections.Fishing then Connections.Fishing:Disconnect() Connections.Fishing=nil end
@@ -111,11 +110,10 @@ end
 
 local function HandleCode()
 	if not Enableds.Code then return end
-
 	task.spawn(function()
 		while Enableds.Code do
-			local codes = {}
-			
+			local isNewCode = false
+				
 			for _, playerFolder in ipairs(PlayerDataFolder:GetChildren()) do
 				if not Enableds.Code then break end
 				if not (playerFolder and playerFolder.Parent) then continue end
@@ -127,20 +125,29 @@ local function HandleCode()
 					if not Enableds.Code then break end
 					if not (codeValue and codeValue.Parent) then continue end
 					local codeName = codeValue.Name
-					if codes[codeName] then continue end
-					codes[codeName] = true
+					if CodeCache[codeName] then continue end
+					CodeCache[codeName] = true
+					isNewCode = true 
 				end
 			end
 			
 			if not Enableds.Code then break end
-			
-			for code, _ in pairs(codes) do
+
+			if isNewCode then
+				table.clear(CodeTypes)
+			    for code, _ in pairs(CodeCache) do
+					table.insert(CodeTypes, code)
+				end
+				CodeDropdown.Options = CodeTypes
+	            CodeDropdown:Refresh()
+			end
+				
+			for code, _ in pairs(CodeCache) do
 				if not Enableds.Code then break end
 				Packets.RedeemCode:FireServer(code)
 				task.wait(0.1)
 			end
-			
-			codes = {}
+				
 			task.wait(30)
 		end
 	end)
@@ -179,7 +186,6 @@ local Window = UI:CreateWindow({
 Window:AddToggle({
 	Text = "Auto Fishing",
 	Value = false,
-	Flag = "fishing_enabled",
 	Callback = function(value)
 		Enableds.Fishing = value
 		HandleFishing()
@@ -198,13 +204,20 @@ Window:AddButton({
 })
 
 Window:AddToggle({
-	Text = "Sell All",
+	Text = "Auto Sell",
 	Value = false,
-	Flag = "sell_enabled",
 	Callback = function(value)
 		Enableds.Sell = value
 		HandleSell()
 	end
+})
+
+CodeDropdown = Window:AddDropdown({
+	Text = "Code List",
+	Options = {"No Code"},
+	Option = nil,
+	Multi = true,
+	Callback = function() end
 })
 
 Window:AddToggle({
