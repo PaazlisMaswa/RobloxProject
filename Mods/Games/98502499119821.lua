@@ -184,7 +184,7 @@ local Window = UI:CreateWindow({
 })
 
 Window:AddToggle({
-	Text = "Auto Fishing",
+	Text = "Auto Fishing (Patched)",
 	Value = false,
 	Callback = function(value)
 		Enableds.Fishing = value
@@ -232,7 +232,6 @@ Window:AddToggle({
 Window:AddToggle({
 	Text = "Claim Quest",
 	Value = false,
-	Flag = "quest_enabled",
 	Callback = function(value)
 		Enableds.Quest = value
 		HandleQuest()
