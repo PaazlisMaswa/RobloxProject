@@ -223,7 +223,6 @@ CodeDropdown = Window:AddDropdown({
 Window:AddToggle({
 	Text = "Claim Code",
 	Value = false,
-	Flag = "code_enabled",
 	Callback = function(value)
 		Enableds.Code = value
 		HandleCode()
