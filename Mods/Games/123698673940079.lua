@@ -8,7 +8,7 @@ local LocalPlayer = Players.LocalPlayer
 local PlayerGui = LocalPlayer:FindFirstChildOfClass("PlayerGui")
 local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
 
-local Enableds = {["Collect"] = false, ["Rebirth"] = false, ["ClaimIndex"] = false, ["ClickMultiply"] = false}
+local Enableds = {["Collect"] = false, ["Upgrade"] = false, ["ClaimIndex"] = false, ["ClickMultiply"] = false, ["Rebirth"] = false, }
 local Connections = {}
 local Values = {}
 
@@ -89,7 +89,6 @@ if SpawnedEggs then
 end
 
 local GuardAreas = SpawnedEggs
-
 
 local Waypoints = {
 	SafeArea = Vector3.new(160, 17.85, -28)
@@ -243,12 +242,12 @@ Window:AddToggle({
 		Enableds.Collect = value
 		if not Enableds.Collect then return end
 		Modules.MutationsData = Modules.MutationsData or require(ReplicatedStorage.ClientModules.MutationsModule:Clone())
-		
+
 		task.spawn(function()
 			while Enableds.Collect do
 				task.wait()
 				local humanoid = Character:FindFirstChildOfClass("Humanoid")
-				
+
 				task.wait(0.1)
 				WalkTo(humanoid, Waypoints.SafeArea)
 				task.wait(0.1)
@@ -257,34 +256,34 @@ Window:AddToggle({
 				local bestBounds = nil
 				local alreadyAreas = {}
 				local bestBounds = bestArea:FindFirstChild("EggZone")
-			  
+
 				if not bestBounds then
-				repeat 
-					   for index=2,#AreasList do
-						   if not Enableds.Collect then break end
-						   bestBounds = bestArea:FindFirstChild("EggZone")
-						   if bestBounds then break end
-						   local selectArea = AreasList[index]
-						   if alreadyAreas[selectArea] then continue end
-					       local area = GuardAreas:FindFirstChild(selectArea)
-						   local bounds = area:FindFirstChild("EggZone")
-						   if bounds and  then
-							  local reached = WalkTo(humanoid, bounds.Position)
-							  if reached then
-								  alreadyAreas[selectArea] = true 
-							  end
-						   end
-						   task.wait()
-					    end
-				    
-					task.wait(1)
-				until bestBounds ~= nil or not Enableds.Collect
-				if not Enableds.Collect then break end
+					repeat 
+						for index=2,#AreasList do
+							if not Enableds.Collect then break end
+							bestBounds = bestArea:FindFirstChild("EggZone")
+							if bestBounds then break end
+							local selectArea = AreasList[index]
+							if alreadyAreas[selectArea] then continue end
+							local area = GuardAreas:FindFirstChild(selectArea)
+							local bounds = area:FindFirstChild("EggZone")
+							if bounds then
+								local reached = WalkTo(humanoid, bounds.Position)
+								if reached then
+									alreadyAreas[selectArea] = true 
+								end
+							end
+							task.wait()
+						end
+
+						task.wait(1)
+					until bestBounds ~= nil or not Enableds.Collect
+					if not Enableds.Collect then break end
 				end
 				WalkTo(humanoid, bestBounds.Position)
-				
+
 				local eggs = {}
-				
+
 				for _, folder in ipairs(bestArea:GetChildren()) do
 					if not Enableds.Collect then break end
 					if folder and folder.Parent and folder:IsA("Folder") and folder.Name == "EggFolder" then
@@ -292,14 +291,14 @@ Window:AddToggle({
 							if egg and egg.Parent and egg:IsA("Model") and egg.Name~="Crest" then
 								local sizeTier = egg:GetAttribute("SizeTier")
 								if not sizeTier then continue end
-								
+
 								local sizeValue = egg:GetAttribute("SizeValue")
 								if not sizeValue then continue end
-								
+
 								sizeTier = string.match(sizeTier, "[%d%.]+")
-								
+
 								sizeValue = sizeValue * (tonumber(sizeTier) or 1)
-								
+
 								local mutation = egg:GetAttribute("Mutation")
 								if mutation ~= nil then
 									local info = Modules.MutationsData[mutation]
@@ -307,7 +306,7 @@ Window:AddToggle({
 										sizeValue = sizeValue * info.Multiple 
 									end
 								end
-								
+
 								table.insert(eggs, {
 									["RootPart"] = egg.PrimaryPart,
 									["Tier"] = sizeValue,
@@ -316,15 +315,15 @@ Window:AddToggle({
 						end
 					end
 				end
-				
+
 				if not Enableds.Collect then break end
-				
+
 				table.sort(eggs, function(a, b)
 					return a.Tier > b.Tier
 				end)
-				
+
 				local closestEgg = eggs[1].RootPart
-				
+
 				if closestEgg then
 					WalkTo(humanoid, closestEgg.Position)
 
@@ -332,14 +331,17 @@ Window:AddToggle({
 
 					WalkTo(humanoid, closestEgg.Position)
 					task.wait()
-					
-					local prompt = closestEgg:FindFirstChildOfClass("ProximityPrompt")
+
+					local prompt:ProximityPrompt = closestEgg:FindFirstChildOfClass("ProximityPrompt")
 					if prompt then
-					   FirePrompt(prompt)
+						repeat
+							FirePrompt(prompt)
+							task.wait(0.1)
+						until not (closestEgg.Parent and prompt.Enabled) or not Enableds.Collect
 					end
 					task.wait(0.5)
 				end
-				
+
 				WalkTo(humanoid, Waypoints.SafeArea)
 				table.clear(eggs)
 				task.wait(1)
@@ -448,21 +450,6 @@ Window:AddToggle({
 })
 
 Window:AddToggle({
-	Text = "Claim Index",
-	Value = false,
-	Callback = function(value)
-		Enableds.ClaimIndex = value
-		if not Enableds.ClaimIndex then return end
-		task.spawn(function()
-			while Enableds.ClaimIndex do
-				Packets.ClaimIndex:FireServer()
-				task.wait(3)
-			end
-		end)
-	end
-})
-
-Window:AddToggle({
 	Text = "Auto Rebirth",
 	Value = false,
 	Callback = function(value)
@@ -478,6 +465,21 @@ Window:AddToggle({
 					end
 				end
 				task.wait()
+			end
+		end)
+	end
+})
+
+Window:AddToggle({
+	Text = "Claim Index",
+	Value = false,
+	Callback = function(value)
+		Enableds.ClaimIndex = value
+		if not Enableds.ClaimIndex then return end
+		task.spawn(function()
+			while Enableds.ClaimIndex do
+				Packets.ClaimIndex:FireServer()
+				task.wait(3)
 			end
 		end)
 	end
