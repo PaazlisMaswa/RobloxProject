@@ -256,16 +256,19 @@ Window:AddToggle({
 				local bestArea = GuardAreas[selectBestArea]
 				local bestBounds = nil
 				local alreadyAreas = {}
+				local bestBounds = bestArea:FindFirstChild("EggZone")
+			  
+				if not bestBounds then
 				repeat 
-					bestBounds = bestArea:FindFirstChild("EggZone")
-					if not lastEggZone then
 					   for index=2,#AreasList do
 						   if not Enableds.Collect then break end
+						   bestBounds = bestArea:FindFirstChild("EggZone")
+						   if bestBounds then break end
 						   local selectArea = AreasList[index]
 						   if alreadyAreas[selectArea] then continue end
-					       local area = GuardAreas[selectArea]
+					       local area = GuardAreas:FindFirstChild(selectArea)
 						   local bounds = area:FindFirstChild("EggZone")
-						   if bounds then
+						   if bounds and  then
 							  local reached = WalkTo(humanoid, bounds.Position)
 							  if reached then
 								  alreadyAreas[selectArea] = true 
@@ -273,10 +276,11 @@ Window:AddToggle({
 						   end
 						   task.wait()
 					    end
-				    end
+				    
 					task.wait(1)
 				until bestBounds ~= nil or not Enableds.Collect
 				if not Enableds.Collect then break end
+				end
 				WalkTo(humanoid, bestBounds.Position)
 				
 				local eggs = {}
@@ -305,7 +309,7 @@ Window:AddToggle({
 								end
 								
 								table.insert(eggs, {
-									["RootPart"] = egg.PrimaryPart or egg:FindFirstChildOfClass("BasePart"),
+									["RootPart"] = egg.PrimaryPart,
 									["Tier"] = sizeValue,
 								})
 							end
@@ -329,19 +333,13 @@ Window:AddToggle({
 					WalkTo(humanoid, closestEgg.Position)
 					task.wait()
 					
-					local prompt = nil
-					
-					for _, v in ipairs(closestEgg.Parent:GetDescendants()) do
-						if v and v.Parent and v:IsA("ProximityPrompt") then
-							prompt = v
-							break
-						end
+					local prompt = closestEgg:FindFirstChildOfClass("ProximityPrompt")
+					if prompt then
+					   FirePrompt(prompt)
 					end
-					
-					FirePrompt(prompt)
-					
 					task.wait(0.5)
 				end
+				
 				WalkTo(humanoid, Waypoints.SafeArea)
 				table.clear(eggs)
 				task.wait(1)
