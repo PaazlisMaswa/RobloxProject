@@ -248,28 +248,36 @@ Window:AddToggle({
 			while Enableds.Collect do
 				task.wait()
 				local humanoid = Character:FindFirstChildOfClass("Humanoid")
-
-				local bestArea = GuardAreas[GetBestArea()]
+				
 				task.wait(0.1)
 				WalkTo(humanoid, Waypoints.SafeArea)
 				task.wait(0.1)
-				local lastEggZone = nil
+				local selectBestArea = GetBestArea()
+				local bestArea = GuardAreas[selectBestArea]
+				local bestBounds = nil
+				local alreadyAreas = {}
 				repeat 
-					task.wait()
-					lastEggZone = bestArea:FindFirstChild("EggZone")
+					bestBounds = bestArea:FindFirstChild("EggZone")
 					if not lastEggZone then
-					for i=2,#AreasList do
-						if not Enableds.Collect then break end
-						local v=AreasList[i]
-						local eggZone=GuardAreas[v]:FindFirstChild("EggZone")
-						if eggZone then
-							WalkTo(humanoid, eggZone.Position)
-						end
-					end
-					end
-				until lastEggZone ~= nil or not Enableds.Collect
+					   for index=2,#AreasList do
+						   if not Enableds.Collect then break end
+						   local selectArea = AreasList[index]
+						   if alreadyAreas[selectArea] then continue end
+					       local area = GuardAreas[selectArea]
+						   local bounds = area:FindFirstChild("EggZone")
+						   if bounds then
+							  local reached = WalkTo(humanoid, bounds.Position)
+							  if reached then
+								  alreadyAreas[selectArea] = true 
+							  end
+						   end
+						   task.wait()
+					    end
+				    end
+					task.wait(1)
+				until bestBounds ~= nil or not Enableds.Collect
 				if not Enableds.Collect then break end
-				WalkTo(humanoid, lastEggZone.Position)
+				WalkTo(humanoid, bestBounds.Position)
 				
 				local eggs = {}
 				
